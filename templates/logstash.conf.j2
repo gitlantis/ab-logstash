@@ -1,0 +1,19 @@
+input { stdin { } }
+
+filter {
+  if [type] != "syslog" {
+    grok {
+      match => { "message" => "%{COMBINEDAPACHELOG}" }
+    }
+    date {
+      match => [ "timestamp" , "dd/MMM/yyyy:HH:mm:ss Z" ]
+    }
+  }
+}
+
+output {
+  elasticsearch {
+    hosts => ["http://localhost:9200"]
+    index => "logstash_index"
+  }
+}

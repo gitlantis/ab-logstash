@@ -1,0 +1,12 @@
+---
+- import_tasks: tasks/packages.yml
+
+- name: Install Java
+  include_role:
+    name: geerlingguy.java
+
+- import_tasks: tasks/ntp.yml
+- import_tasks: tasks/monit.yml
+- import_tasks: tasks/elasticsearch.yml
+- import_tasks: tasks/logstash.yml
+- import_tasks: tasks/get_id.yml

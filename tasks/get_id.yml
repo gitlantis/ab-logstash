@@ -1,0 +1,19 @@
+---
+- name: Get unique id
+  command: cat {{vmid_path}}
+  register: unique_id_output
+
+- debug:
+    var: unique_id_output.stdout
+
+- name: Print output to file
+  copy:
+    content: |
+      [general]
+      uniqueID={{unique_id_output.stdout}}
+    dest: '{{vmid_path}}.ini'
+
+- name: Ensure the file exists
+  fetch:
+    src: '{{vmid_path}}.ini'
+    dest: '{{vmid_fetch_dir}}'

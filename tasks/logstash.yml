@@ -1,0 +1,47 @@
+---
+- name: Check GPG keyring file
+  stat:
+    path: /usr/share/keyrings/elasticsearch-keyring.gpg
+  register: keyring_status
+
+- name: Download Elastic GPG Key
+  command: wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch
+  register: gpg_key_output
+  when: not keyring_status.stat.exists
+
+- name: Import Elastic GPG Key
+  command: gpg --dearmor -o /usr/share/keyrings/elasticsearch-keyring.gpg
+  args:
+    stdin: "{{ gpg_key_output.stdout }}"
+  when: not keyring_status.stat.exists
+
+- name: Add Elastic APT Repository
+  apt_repository:
+    repo: 'deb [signed-by=/usr/share/keyrings/elasticsearch-keyring.gpg] https://artifacts.elastic.co/packages/8.x/apt stable main'
+  when: not keyring_status.stat.exists
+
+- name: Update Package List
+  apt:
+    update_cache: yes
+  when: not keyring_status.stat.exists
+
+- name: Install Logstash
+  apt:
+    name: logstash
+    state: present
+
+- name: Copy Logstash Configuration
+  template:
+    src: "logstash.conf.j2"
+    dest: "/etc/logstash/conf.d/user-config.conf"  
+
+- name: Enable Logstash Service
+  systemd:
+    name: logstash
+    enabled: yes
+    daemon-reload: true
+
+- name: Start Logstash Service
+  systemd:
+    name: logstash
+    state: started

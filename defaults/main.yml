@@ -1,0 +1,10 @@
+ntp_server: time.google.com
+
+packages:
+  - ntp
+  - net-tools
+  - monit
+  - apt-transport-https
+  
+vmid_path: /etc/unique_id
+vmid_fetch_dir: /tmp

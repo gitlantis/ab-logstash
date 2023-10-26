@@ -1,0 +1,101 @@
+---
+# - name: Download Elastic GPG Key
+#   get_url:
+#     url: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+#     dest: /tmp/elasticsearch-gpg-key
+#     mode: '0644'
+#     force: true
+
+- name: Check GPG keyring file
+  stat:
+    path: /usr/share/keyrings/elasticsearch-keyring.gpg
+  register: keyring_status
+
+- name: Download Elastic GPG Key
+  command: wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch
+  register: gpg_key_output
+  when: not keyring_status.stat.exists
+
+- name: Import Elastic GPG Key
+  command: gpg --dearmor -o /usr/share/keyrings/elasticsearch-keyring.gpg
+  args:
+    stdin: "{{ gpg_key_output.stdout }}"
+  when: not keyring_status.stat.exists
+
+# - name: install public key
+#   command: "wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch | sudo gpg --dearmor -o /usr/share/keyrings/elastic-keyring.gpg" 
+  # when: not keyring_status.stat.exists
+  
+# - name: Save Repository defenition
+#   command: "echo 'deb [signed-by=/usr/share/keyrings/elasticsearch-keyring.gpg] https://artifacts.elastic.co/packages/8.x/apt stable main' | sudo tee /etc/apt/sources.list.d/elastic-8.x.list" 
+
+- name: Add Elastic APT Repository
+  apt_repository:
+    repo: 'deb [signed-by=/usr/share/keyrings/elasticsearch-keyring.gpg] https://artifacts.elastic.co/packages/8.x/apt stable main'
+  when: not keyring_status.stat.exists
+
+- name: Update Package List
+  apt:
+    update_cache: yes
+  when: not keyring_status.stat.exists
+
+- name: Install Elasticsearch
+  apt:
+    name: elasticsearch
+    state: present
+
+- name: Configure elasticsearch
+  template:
+    src: elasticsearch.yml.j2
+    dest: /etc/elasticsearch/elasticsearch.yml
+
+- name: Enable Elasticsearch Service
+  systemd:
+    name: elasticsearch
+    enabled: yes
+    daemon-reload: true
+
+- name: Start Elasticsearch Service
+  systemd:
+    name: elasticsearch
+    state: started
+
+# ---
+# - name: Download Elasticsearch
+#   get_url:
+#     url: "https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-8.10.4-linux-x86_64.tar.gz"
+#     dest: "/tmp/elasticsearch-8.10.4.tar.gz"
+#   #register: download_result
+  
+# - name: Extract Elasticsearch
+#   unarchive:
+#     src: "/tmp/elasticsearch-8.10.4.tar.gz"
+#     dest: "/opt"
+#     remote_src: yes    
+#   #when: download_result.changed
+
+# - name: Create Symbolic Link
+#   file:
+#     src: "/opt/elasticsearch-8.10.4"
+#     dest: "/opt/elasticsearch"
+#     state: link
+#     mode: 'a+x'
+#   #when: download_result.changed
+
+# - name: Give permession to elasticsearch
+#   command: "sudo chown -R {{ansible_env.SUDO_USER}}:{{ansible_env.SUDO_USER}} /opt/elasticsearch-8.10.4"
+
+# - name: Change access to elasticsearch
+#   command: "sudo chmod -R 755 /opt/elasticsearch-8.10.4"
+
+# - name: Configure elasticsearch
+#   template:
+#     src: elasticsearch.yml
+#     dest: /opt/elasticsearch-8.10.4
+
+# - name: Start Elasticsearch
+#   command: "sudo -u {{ansible_env.SUDO_USER}} /opt/elasticsearch/bin/elasticsearch"
+#   register: start_result
+
+# - debug:
+#     var: start_result.stdout

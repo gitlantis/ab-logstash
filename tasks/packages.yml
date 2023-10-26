@@ -1,0 +1,10 @@
+---
+- name: Upgrade all packages
+  apt:
+    upgrade: full
+    update_cache: yes        
+
+- name: Install required packages
+  package:
+    name: "{{ packages }}"
+    state: latest 

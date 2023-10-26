@@ -1,0 +1,21 @@
+---
+- name: Configure Monit
+  template:
+    src: monitrc.j2
+    dest: /etc/monit/monitrc
+
+- name: Create Monit rule for elasticsearch
+  template:
+    src: elasticsearch.monit.j2
+    dest: /etc/monit/conf.d/elasticsearch    
+
+- name: Create Monit rule for logstash
+  template:
+    src: logstash.monit.j2
+    dest: /etc/monit/conf.d/logstash
+
+- name: Enable Monit service
+  service:
+    name: monit
+    enabled: yes
+    state: started
